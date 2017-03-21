@@ -37,19 +37,28 @@ void PhysicsInit() {
 	for (int i = 0; i < meshRows; i++) {
 		for (int j = 0; j < meshColumns; j++) {
 
-			meshArray[i * meshColumns * 3 + j * 3 + 0] = -2 + 4 * j / (float)meshColumns;
-			meshArray[i * meshColumns * 3 + j * 3 + 1] = 7 - 4 * i / (float)meshRows;
-			meshArray[i * meshColumns * 3 + j * 3 + 2] = 0;
+			meshArray[i * meshColumns * 3 + j * 3 + 0] = -3.5f + 7.5f * j / (float)meshColumns;
+			meshArray[i * meshColumns * 3 + j * 3 + 1] = 8; //9 - 8 * i / (float)meshRows;
+			meshArray[i * meshColumns * 3 + j * 3 + 2] = -3.5f + 7.5f * i / (float)meshRows;
 
-			std::cout << i << " " << j << std::endl;
 		}
-		std::cout << "i++" << std::endl;
 		
 	}
 }
 void PhysicsUpdate(float dt) {
 	
+	//Top left always the same positions
+	meshArray[0] = -3.5f + 7.5f * 0 / (float)meshColumns;
+	meshArray[1] = 8;
+	meshArray[2] = -3.5f + 7.5f * 0 / (float)meshRows;
+
+	//Top right always the same positions
+	meshArray[13 * 3 + 0] = -3.5f + 7.5f * 13 / (float)meshColumns;
+	meshArray[13 * 3 + 1] = 8;
+	meshArray[13 * 3 + 2] = -3.5f + 7.5f * 0 / (float)meshRows;
+
 	ClothMesh::updateClothMesh(meshArray);
+
 }
 void PhysicsCleanup() {
 	
