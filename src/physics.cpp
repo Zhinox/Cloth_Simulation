@@ -1,6 +1,12 @@
 #include <imgui\imgui.h>
 #include <imgui\imgui_impl_glfw_gl3.h>
+#include <GL\glew.h>
+#include <glm\gtc\type_ptr.hpp>
+#include <glm\gtc\matrix_transform.hpp>
+#include <cstdio>
 #include <iostream>
+#include <time.h>
+#include <math.h>
 
 bool show_test_window = false;
 
@@ -12,11 +18,19 @@ namespace ClothMesh {
 	void drawClothMesh();
 };
 
+struct meshNodes {
+	glm::vec3 vector = { 0,0,0 };
+	glm::vec3 velvector = { 0,0,0 };
+	float totalForce = 9;
+};
+
+
 const int meshRows = 18;
 const int meshColumns = 14;
 const int totalVertex = meshRows * meshColumns;
 
 float *meshArray;
+glm::vec3 *nodeVectors;
 
 void GUI() {
 	{	
@@ -33,31 +47,30 @@ void GUI() {
 
 void PhysicsInit() {
 	meshArray = new float[totalVertex * 3];
+	nodeVectors = new glm::vec3[totalVertex];
 
-	for (int i = 0; i < meshRows; i++) {
-		for (int j = 0; j < meshColumns; j++) {
+	int columnsCounter = 0;
+	int rowsCounter = 0;
+	for (int i = 0; i < totalVertex; i++) {
+		nodeVectors[i] = { -3.5f + 7.5f * columnsCounter / (float)meshColumns,8,-3.5f + 7.5f * rowsCounter / (float)meshRows };
 
-			meshArray[i * meshColumns * 3 + j * 3 + 0] = -3.5f + 7.5f * j / (float)meshColumns;
-			meshArray[i * meshColumns * 3 + j * 3 + 1] = 8; //9 - 8 * i / (float)meshRows;
-			meshArray[i * meshColumns * 3 + j * 3 + 2] = -3.5f + 7.5f * i / (float)meshRows;
-
+		if (columnsCounter >= 13) {
+			columnsCounter = 0;
+			rowsCounter += 1;
 		}
-		
-	}
+		else {columnsCounter += 1;}
+	}	
+
 }
 void PhysicsUpdate(float dt) {
 	
 	//Top left always the same positions
-	meshArray[0] = -3.5f + 7.5f * 0 / (float)meshColumns;
-	meshArray[1] = 8;
-	meshArray[2] = -3.5f + 7.5f * 0 / (float)meshRows;
+	nodeVectors[0] = { -3.5f + 7.5f * 0 / (float)meshColumns ,8,-3.5f + 7.5f * 0 / (float)meshColumns };
 
 	//Top right always the same positions
-	meshArray[13 * 3 + 0] = -3.5f + 7.5f * 13 / (float)meshColumns;
-	meshArray[13 * 3 + 1] = 8;
-	meshArray[13 * 3 + 2] = -3.5f + 7.5f * 0 / (float)meshRows;
+	nodeVectors[13] = { -3.5f + 7.5f * 13 / (float)meshColumns ,8,-3.5f + 7.5f * 0 / (float)meshColumns };
 
-	ClothMesh::updateClothMesh(meshArray);
+	ClothMesh::updateClothMesh(&nodeVectors[0].x);
 
 }
 void PhysicsCleanup() {
