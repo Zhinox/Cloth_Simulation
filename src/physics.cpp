@@ -8,6 +8,7 @@
 #include <time.h>
 #include <math.h>
 
+
 bool show_test_window = false;
 
 namespace ClothMesh {
@@ -21,11 +22,11 @@ namespace ClothMesh {
 const int meshRows = 18;
 const int meshColumns = 14;
 const int totalVertex = meshRows * meshColumns;
-const float gravity = -9.81;
 
-static float Ke = 2;
-static float Kd = 2;
+static float Ke = 1;
+static float Kd = 1;
 static float L = 0.5f;
+
 glm::vec3 *nodeVectors;
 glm::vec3 *lastVectors;
 glm::vec3 *velVectors;
@@ -44,21 +45,49 @@ void GUI() {
 	}
 }
 
-glm::vec3 calculateForces(glm::vec3 P1, glm::vec3 P2, glm::vec3 v1, glm::vec3 v2) {
+glm::vec3 calculateForces(glm::vec3 P1, glm::vec3 P2, glm::vec3 v1, glm::vec3 v2, float Length) {
 
 	float distance = glm::length(P1-P2); //Calculate distance between points
 	
-	float Calc1 = Ke*(distance - L) + glm::dot(Kd*(v1-v2), glm::normalize(P1-P2)); //First calculus of force
+	float Calc1 = Ke*(distance - Length) + glm::dot(Kd*(v1-v2), glm::normalize(P1-P2)); //First calculus of force
 
 	glm::vec3 totalResult = -Calc1 *  glm::normalize(P1-P2); //Final force vector
 
 	return totalResult;
 }
 
-glm::vec3 calculateAllForces(glm::vec3 P1) {
+glm::vec3 calculateAllForces(glm::vec3 vectorsPos[], glm::vec3 vectorsVel[], int calcVector) {
 
+	glm::vec3 totalForces;
 
+	//Structural
+	if (calcVector % 18 != 17) { totalForces += calculateForces(vectorsPos[calcVector], vectorsPos[calcVector + 1], vectorsVel[calcVector], vectorsVel[calcVector + 1], L); } //Dreta 
 
+	if (calcVector % 18 != 0) { totalForces += calculateForces(vectorsPos[calcVector], vectorsPos[calcVector - 1], vectorsVel[calcVector], vectorsVel[calcVector - 1], L); }//Esquerra
+
+	if (calcVector / 18 != 0) { totalForces += calculateForces(vectorsPos[calcVector], vectorsPos[calcVector - 18], vectorsVel[calcVector], vectorsVel[calcVector - 18],L); } //Adalt
+
+	if (calcVector / 18 != 13) { totalForces += calculateForces(vectorsPos[calcVector], vectorsPos[calcVector + 18], vectorsVel[calcVector], vectorsVel[calcVector + 18],L); } //Abaix
+
+	//Shear
+	if (calcVector % 18 != 17 && calcVector / 18 != 0) { totalForces += calculateForces(vectorsPos[calcVector], vectorsPos[calcVector - 17], vectorsVel[calcVector], vectorsVel[calcVector - 17],); }//Diagonal dreta adalt
+
+	if (calcVector % 18 != 17 && calcVector / 18 != 13) { totalForces += calculateForces(vectorsPos[calcVector], vectorsPos[calcVector + 19], vectorsVel[calcVector], vectorsVel[calcVector + 19],); }//Diagonal dreta abaix
+
+	if (calcVector % 18 != 0 && calcVector / 18 != 0) { totalForces += calculateForces(vectorsPos[calcVector], vectorsPos[calcVector + 17], vectorsVel[calcVector], vectorsVel[calcVector + 17],); }//Diagonal esquerra adalt
+
+	if (calcVector % 18 != 0 && calcVector / 18 != 13) { totalForces += calculateForces(vectorsPos[calcVector], vectorsPos[calcVector - 19], vectorsVel[calcVector], vectorsVel[calcVector - 19],); } //Diagonal esquerra abaix
+
+	//Bending
+	if (calcVector % 18 != 17 && calcVector % 18 != 16) { totalForces += calculateForces(vectorsPos[calcVector], vectorsPos[calcVector + 2], vectorsVel[calcVector], vectorsVel[calcVector + 2], L*2); } //Doble dreta
+
+	if (calcVector % 18 != 0 && calcVector % 18 != 1) { totalForces += calculateForces(vectorsPos[calcVector], vectorsPos[calcVector - 2], vectorsVel[calcVector], vectorsVel[calcVector - 2], L*2); } //Doble esquerra
+
+	if (calcVector / 18 != 0 && calcVector / 18 != 1) { totalForces += calculateForces(vectorsPos[calcVector], vectorsPos[calcVector - 36], vectorsVel[calcVector], vectorsVel[calcVector - 36], L*2); } //Doble adalt
+
+	if (calcVector / 18 != 13 && calcVector / 18 != 12) { totalForces += calculateForces(vectorsPos[calcVector], vectorsPos[calcVector + 36], vectorsVel[calcVector], vectorsVel[calcVector + 36], L*2); } //Doble abaix
+
+	return totalForces;
 
 }
 
@@ -83,6 +112,8 @@ void PhysicsInit() {
 		else {columnsCounter += 1;}
 	}	
 
+	glm::vec3 force = calculateAllForces(nodeVectors, velVectors, 1);
+	std::cout << force.x << " " << force.y << " " << force.z << std::endl;
 }
 
 
@@ -98,19 +129,16 @@ void PhysicsUpdate(float dt) {
 
 		lastVectors[i] = nodeVectors[i];
 
-		newVectors[i].x = nodeVectors[i].x + dt * velVectors[i].x;
-		newVectors[i].y = nodeVectors[i].y + dt * velVectors[i].y;
-		newVectors[i].z = nodeVectors[i].z + dt * velVectors[i].z;
+		newVectors[i] = nodeVectors[i] + dt * velVectors[i]; //Euler
 
-		velVectors[i].y = velVectors[i].y + dt * gravity;
+		velVectors[i] = velVectors[i] + dt * calculateAllForces(nodeVectors, velVectors, i); //Apply force 	velVectors[i] = velVectors[i] + dt * gravity; //Apply force
 
-		nodeVectors[i].x = newVectors[i].x;
-		nodeVectors[i].y = newVectors[i].y;
-		nodeVectors[i].z = newVectors[i].z;
-
-
+		nodeVectors[i] = newVectors[i]; //Update position
+		
 	}
 
+	
+	
 	ClothMesh::updateClothMesh(&nodeVectors[0].x);
 
 }
