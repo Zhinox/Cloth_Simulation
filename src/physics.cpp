@@ -103,7 +103,7 @@ void PhysicsInit() {
 		nodeVectors[i] = { L * columnsCounter - (L*meshColumns/2) + L/2,8, L * rowsCounter - (L*meshRows/2) + L/2};
 		lastVectors[i] = nodeVectors[i];
 		newVectors[i] = lastVectors[i];
-		velVectors[i] = {0,0,0};
+		velVectors[i] = {0,-9.81,0};
 	
 		if (columnsCounter >= 13) {
 			columnsCounter = 0;
@@ -128,10 +128,13 @@ void PhysicsUpdate(float dt) {
 
 		lastVectors[i] = nodeVectors[i];
 
-		//newVectors[i] = nodeVectors[i] + dt * velVectors[i]; //Euler
+		velVectors[i] = velVectors[i] + dt * calculateAllForces(nodeVectors, velVectors, i); //Apply force 
 
-		velVectors[i] = velVectors[i] + dt * calculateAllForces(nodeVectors, velVectors, i); //Apply force 	velVectors[i] = velVectors[i] + dt * gravity; //Apply force
-		std::cout << velVectors[i].x << " " << velVectors[i].y << " " << velVectors[i].z << std::endl;
+		newVectors[i] = nodeVectors[i] + dt * velVectors[i]; //Euler
+
+		std::cout << "Velocity: " << i << " " << velVectors[i].x << " " << velVectors[i].y << " " << velVectors[i].z << std::endl;
+		std::cout << "Position: " << i << " " << newVectors[i].x << " " << newVectors[i].y << " " << newVectors[i].z << std::endl;
+
 		nodeVectors[i] = newVectors[i]; //Update position
 		
 	}
