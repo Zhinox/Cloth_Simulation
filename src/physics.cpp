@@ -70,13 +70,13 @@ glm::vec3 calculateAllForces(glm::vec3 vectorsPos[], glm::vec3 vectorsVel[], int
 	if (calcVector / 18 != 13) { totalForces += calculateForces(vectorsPos[calcVector], vectorsPos[calcVector + 18], vectorsVel[calcVector], vectorsVel[calcVector + 18],L); } //Abaix
 
 	//Shear
-	if (calcVector % 18 != 17 && calcVector / 18 != 0) { totalForces += calculateForces(vectorsPos[calcVector], vectorsPos[calcVector - 17], vectorsVel[calcVector], vectorsVel[calcVector - 17],); }//Diagonal dreta adalt
+	if (calcVector % 18 != 17 && calcVector / 18 != 0) { totalForces += calculateForces(vectorsPos[calcVector], vectorsPos[calcVector - 17], vectorsVel[calcVector], vectorsVel[calcVector - 17], sqrt(L*L+L*L)); }//Diagonal dreta adalt
 
-	if (calcVector % 18 != 17 && calcVector / 18 != 13) { totalForces += calculateForces(vectorsPos[calcVector], vectorsPos[calcVector + 19], vectorsVel[calcVector], vectorsVel[calcVector + 19],); }//Diagonal dreta abaix
+	if (calcVector % 18 != 17 && calcVector / 18 != 13) { totalForces += calculateForces(vectorsPos[calcVector], vectorsPos[calcVector + 19], vectorsVel[calcVector], vectorsVel[calcVector + 19], sqrt(L*L + L*L)); }//Diagonal dreta abaix
 
-	if (calcVector % 18 != 0 && calcVector / 18 != 0) { totalForces += calculateForces(vectorsPos[calcVector], vectorsPos[calcVector + 17], vectorsVel[calcVector], vectorsVel[calcVector + 17],); }//Diagonal esquerra adalt
+	if (calcVector % 18 != 0 && calcVector / 18 != 0) { totalForces += calculateForces(vectorsPos[calcVector], vectorsPos[calcVector + 17], vectorsVel[calcVector], vectorsVel[calcVector + 17], sqrt(L*L + L*L)); }//Diagonal esquerra adalt
 
-	if (calcVector % 18 != 0 && calcVector / 18 != 13) { totalForces += calculateForces(vectorsPos[calcVector], vectorsPos[calcVector - 19], vectorsVel[calcVector], vectorsVel[calcVector - 19],); } //Diagonal esquerra abaix
+	if (calcVector % 18 != 0 && calcVector / 18 != 13) { totalForces += calculateForces(vectorsPos[calcVector], vectorsPos[calcVector - 19], vectorsVel[calcVector], vectorsVel[calcVector - 19], sqrt(L*L + L*L)); } //Diagonal esquerra abaix
 
 	//Bending
 	if (calcVector % 18 != 17 && calcVector % 18 != 16) { totalForces += calculateForces(vectorsPos[calcVector], vectorsPos[calcVector + 2], vectorsVel[calcVector], vectorsVel[calcVector + 2], L*2); } //Doble dreta
@@ -112,8 +112,7 @@ void PhysicsInit() {
 		else {columnsCounter += 1;}
 	}	
 
-	glm::vec3 force = calculateAllForces(nodeVectors, velVectors, 1);
-	std::cout << force.x << " " << force.y << " " << force.z << std::endl;
+	
 }
 
 
@@ -129,10 +128,10 @@ void PhysicsUpdate(float dt) {
 
 		lastVectors[i] = nodeVectors[i];
 
-		newVectors[i] = nodeVectors[i] + dt * velVectors[i]; //Euler
+		//newVectors[i] = nodeVectors[i] + dt * velVectors[i]; //Euler
 
 		velVectors[i] = velVectors[i] + dt * calculateAllForces(nodeVectors, velVectors, i); //Apply force 	velVectors[i] = velVectors[i] + dt * gravity; //Apply force
-
+		std::cout << velVectors[i].x << " " << velVectors[i].y << " " << velVectors[i].z << std::endl;
 		nodeVectors[i] = newVectors[i]; //Update position
 		
 	}
