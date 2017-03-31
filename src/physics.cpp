@@ -23,8 +23,8 @@ const int meshRows = 18;
 const int meshColumns = 14;
 const int totalVertex = meshRows * meshColumns;
 
-static float Ke = 1;
-static float Kd = 1;
+static float Ke = 10;
+static float Kd = 10;
 static float L = 0.5f;
 
 glm::vec3 *nodeVectors;
@@ -35,8 +35,8 @@ glm::vec3 *newVectors;
 void GUI() {
 	{	
 		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-		Ke = 2;
-		Kd = 3;
+		Ke = 10;
+		Kd = 10;
 	}
 
 	if(show_test_window) {
@@ -48,10 +48,14 @@ void GUI() {
 glm::vec3 calculateForces(glm::vec3 P1, glm::vec3 P2, glm::vec3 v1, glm::vec3 v2, float Length) {
 
 	float distance = glm::length(P1-P2); //Calculate distance between points
-	
-	float Calc1 = Ke*(distance - Length) + glm::dot(Kd*(v1-v2), glm::normalize(P1-P2)); //First calculus of force
 
-	glm::vec3 totalResult = -Calc1 *  glm::normalize(P1-P2); //Final force vector
+	glm::vec3 velocity = Kd * (v1 - v2); //Velocity vector
+
+	glm::vec3 normalVector = glm::normalize(P1 - P2); //Normal vector
+
+	float Calc1 = Ke*(distance - Length) + glm::dot(velocity,normalVector); //First calculus of force
+
+	glm::vec3 totalResult = (-Calc1) *normalVector; //Final force vector
 
 	return totalResult;
 }
@@ -101,9 +105,7 @@ void PhysicsInit() {
 	int rowsCounter = 0;
 	for (int i = 0; i < totalVertex; i++) {
 		nodeVectors[i] = { L * columnsCounter - (L*meshColumns/2) + L/2,8, L * rowsCounter - (L*meshRows/2) + L/2};
-		lastVectors[i] = nodeVectors[i];
-		newVectors[i] = lastVectors[i];
-		velVectors[i] = {0,-9.81,0};
+		velVectors[i] = {0,0,0};
 	
 		if (columnsCounter >= 13) {
 			columnsCounter = 0;
@@ -127,17 +129,18 @@ void PhysicsUpdate(float dt) {
 	for (int i = 0; i < totalVertex; i++) { //Applying physics on all nodes
 		
 
-		lastVectors[i] = nodeVectors[i];
-
 		glm::vec3 tempForce = calculateAllForces(nodeVectors, velVectors, i);
 
-		velVectors[i] = velVectors[i] + dt * tempForce; //Apply force 
-		velVectors[i].y = velVectors[i].y * -9.81;
+		//velVectors[i] = velVectors[i] + dt * tempForce; //Apply force 
+		velVectors[i].x = velVectors[i].x + dt * 0;
+		velVectors[i].y = velVectors[i].y + dt * -9.81;
+		velVectors[i].z = velVectors[i].z + dt * 0;
+
 
 		newVectors[i] = nodeVectors[i] + dt * velVectors[i]; //Euler
 
-		std::cout << "Velocity: " << i << " " << velVectors[i].x << " " << velVectors[i].y << " " << velVectors[i].z << std::endl;
-		std::cout << "Position: " << i << " " << newVectors[i].x << " " << newVectors[i].y << " " << newVectors[i].z << std::endl;
+		//std::cout << "Velocity: " << i << " " << velVectors[i].x << " " << velVectors[i].y << " " << velVectors[i].z << std::endl;
+		//std::cout << "Position: " << i << " " << newVectors[i].x << " " << newVectors[i].y << " " << newVectors[i].z << std::endl;
 
 		nodeVectors[i] = newVectors[i]; //Update position
 		
@@ -148,6 +151,8 @@ void PhysicsUpdate(float dt) {
 	ClothMesh::updateClothMesh(&nodeVectors[0].x);
 
 }
+
+
 void PhysicsCleanup() {
 	
 }
