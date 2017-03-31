@@ -58,6 +58,7 @@ glm::vec3 calculateForces(glm::vec3 P1, glm::vec3 P2, glm::vec3 v1, glm::vec3 v2
 	glm::vec3 totalResult = (-Calc1) *normalVector; //Final force vector
 
 	return totalResult;
+
 }
 
 glm::vec3 calculateAllForces(glm::vec3 vectorsPos[], glm::vec3 vectorsVel[], int calcVector) {
