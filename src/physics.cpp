@@ -125,10 +125,14 @@ void PhysicsUpdate(float dt) {
 	nodeVectors[13] = { L * 13 - (L*meshColumns / 2) + L / 2,8, L * 0 - (L*meshRows / 2) + L / 2 };
 
 	for (int i = 0; i < totalVertex; i++) { //Applying physics on all nodes
+		
 
 		lastVectors[i] = nodeVectors[i];
 
-		velVectors[i] = velVectors[i] + dt * calculateAllForces(nodeVectors, velVectors, i); //Apply force 
+		glm::vec3 tempForce = calculateAllForces(nodeVectors, velVectors, i);
+
+		velVectors[i] = velVectors[i] + dt * tempForce; //Apply force 
+		velVectors[i].y = velVectors[i].y * -9.81;
 
 		newVectors[i] = nodeVectors[i] + dt * velVectors[i]; //Euler
 
