@@ -8,7 +8,6 @@
 #include <time.h>
 #include <math.h>
 
-
 bool show_test_window = false;
 
 namespace ClothMesh {
@@ -35,7 +34,6 @@ glm::vec3 *lastVectors;
 glm::vec3 *velVectors;
 glm::vec3 *newVectors;
 glm::vec3 *forceVectors;
-
 
 glm::vec3 terraN = { 0,1,0 };
 glm::vec3 sostreN = { 0,-1,0 };
@@ -183,7 +181,7 @@ void PhysicsInit() {
 		velVectors[i] = {0,0,0};
 		newVectors[i] = nodeVectors[i];
 		forceVectors[i] = calculateAllForces(nodeVectors, velVectors, i);
-	
+		
 		if (columnsCounter >= 13) {
 			columnsCounter = 0;
 			rowsCounter += 1;
@@ -211,17 +209,19 @@ void PhysicsUpdate(float dt) {
 
 		newVectors[i] = nodeVectors[i] + dt * velVectors[i]; //Euler 
 
-		velVectors[i].x = velVectors[i].x + dt * 0; //Velocities
-		velVectors[i].y = velVectors[i].y + dt * 0;
-		velVectors[i].z = velVectors[i].z + dt * 0;
+		velVectors[i].x = velVectors[i].x + dt * 0.2f; //Velocities
+		velVectors[i].y = velVectors[i].y + dt * -9.81f;
+		velVectors[i].z = velVectors[i].z + dt * 0.3f;
 
 		//std::cout << "Velocity: " << i << " " << velVectors[i].x << " " << velVectors[i].y << " " << velVectors[i].z << std::endl;
 		//std::cout << "Position: " << i << " " << newVectors[i].x << " " << newVectors[i].y << " " << newVectors[i].z << std::endl;
 
 		nodeVectors[i] = newVectors[i]; //Update position
 
-		velVectors[i] = calculateAllCollisions(nodeVectors, velVectors, lastVectors[i], 1, i); //Return velocity vector collision
-		nodeVectors[i] = calculateAllCollisions(nodeVectors, velVectors, lastVectors[i], 2, i); //Return position vector on collision
+		velVectors[i] = calculateAllCollisions(nodeVectors, velVectors, lastVectors[i], 2, i); //Return velocity vector collision
+		nodeVectors[i] = calculateAllCollisions(nodeVectors, velVectors, lastVectors[i], 1, i); //Return position vector on collision
+
+
 
 	}
 
