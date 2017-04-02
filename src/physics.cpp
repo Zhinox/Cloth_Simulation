@@ -36,21 +36,76 @@ glm::vec3 *velVectors;
 glm::vec3 *newVectors;
 glm::vec3 *forceVectors;
 
+
+glm::vec3 terraN = { 0,1,0 };
+glm::vec3 sostreN = { 0,-1,0 };
+glm::vec3 leftN = { 1,0,0 };
+glm::vec3 rightN = { -1,0,0 };
+glm::vec3 backN = { 0,0,1 };
+glm::vec3 frontN = { 0,0,-1 };
+
 void GUI() {
-	{	
+	
 		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 		ImGui::SliderInt("Reset Time", &resetTime, 1, 20);
 		ImGui::SliderInt("Ke", &Ke, 100, 2000);
 		ImGui::SliderFloat("Kd", &Kd, 1, 100);
 		ImGui::SliderFloat("Max elongation", &maxElongation, 1, 10);
 		ImGui::SliderFloat("Inital rest distance", &L, 0.1f, 0.8f);
-	}
 
-	if(show_test_window) {
-		ImGui::SetNextWindowPos(ImVec2(650, 20), ImGuiSetCond_FirstUseEver);
-		ImGui::ShowTestWindow(&show_test_window);
-	}
+		if(show_test_window) {
+			ImGui::SetNextWindowPos(ImVec2(650, 20), ImGuiSetCond_FirstUseEver);
+			ImGui::ShowTestWindow(&show_test_window);
+		}
 }
+
+float calculateCollision(glm::vec3 vector, glm::vec3 lastvector, glm::vec3 normal, int d) {
+
+	float calc1 = glm::dot(vector, normal) + d;
+	float calc2 = glm::dot(lastvector, normal) + d;
+	return calc1*calc2;
+
+}
+
+glm::vec3 calculateAllCollisions(glm::vec3 vectorPos[], glm::vec3 vectorsVel[], glm::vec3 lastPosition, int mode, int calcVector) {
+
+			if (calculateCollision(vectorPos[calcVector], lastPosition, terraN, 0) <= 0) { //Collision with ground
+				if (mode == 1) {return vectorPos[calcVector] - (1 + 0.9f) * (glm::dot(terraN, vectorPos[calcVector]) + 0) * terraN;}
+				else { return vectorsVel[calcVector] - (1 + 0.9f) * (glm::dot(terraN, vectorsVel[calcVector]) + 0) * terraN; }
+			}
+
+			if (calculateCollision(vectorPos[calcVector], lastPosition, sostreN, 10) <= 0) { //Collision with roof
+				if (mode == 1) { return vectorPos[calcVector] - (1 + 0.9f) * (glm::dot(sostreN, vectorPos[calcVector]) + 10) * sostreN; }
+				else { return vectorsVel[calcVector] - (1 + 0.9f) * (glm::dot(sostreN, vectorsVel[calcVector]) + 10) * sostreN; }
+			}
+
+			if (calculateCollision(vectorPos[calcVector], lastPosition, leftN, 5) <= 0) { //Collision with left wall
+				if (mode == 1) { return vectorPos[calcVector] - (1 + 0.9f) * (glm::dot(leftN, vectorPos[calcVector]) + 5) * leftN; }
+				else { return vectorsVel[calcVector] - (1 + 0.9f) * (glm::dot(leftN, vectorsVel[calcVector]) + 5) * leftN; }
+			}
+
+			if (calculateCollision(vectorPos[calcVector], lastPosition, rightN, 5) <= 0) { //Collision with right wall
+				if (mode == 1) { return vectorPos[calcVector] - (1 + 0.9f) * (glm::dot(rightN, vectorPos[calcVector]) + 5) * rightN; }
+				else { return vectorsVel[calcVector] - (1 + 0.9f) * (glm::dot(rightN, vectorsVel[calcVector]) + 5) * rightN; }
+			}
+
+			if (calculateCollision(vectorPos[calcVector], lastPosition, frontN, 5) <= 0) { //Collision with front wall
+				if (mode == 1) { return vectorPos[calcVector] - (1 + 0.9f) * (glm::dot(frontN, vectorPos[calcVector]) + 5) * frontN; }
+				else { return vectorsVel[calcVector] - (1 + 0.9f) * (glm::dot(frontN, vectorsVel[calcVector]) + 5) * frontN; }
+			}
+
+			if (calculateCollision(vectorPos[calcVector], lastPosition, backN, 5) <= 0) { //Collision with back wall
+				if (mode == 1) { return vectorPos[calcVector] - (1 + 0.9f) * (glm::dot(backN, vectorPos[calcVector]) + 5) * backN; }
+				else { return vectorsVel[calcVector] - (1 + 0.9f) * (glm::dot(backN, vectorsVel[calcVector]) + 5) * backN; }
+			}
+
+			else {
+				if (mode == 1) { return vectorPos[calcVector]; }
+				else { return vectorsVel[calcVector]; }
+			}
+
+}
+
 
 glm::vec3 calculateForces(glm::vec3 P1, glm::vec3 P2, glm::vec3 v1, glm::vec3 v2, float Length) {
 
@@ -118,6 +173,7 @@ void PhysicsInit() {
 	velVectors = new glm::vec3[totalVertex];
 	newVectors = new glm::vec3[totalVertex];
 	forceVectors = new glm::vec3[totalVertex];
+	lastVectors = new glm::vec3[totalVertex];
 
 	int columnsCounter = 0;
 	int rowsCounter = 0;
@@ -133,9 +189,8 @@ void PhysicsInit() {
 			rowsCounter += 1;
 		}
 		else {columnsCounter += 1;}
-	}	
+	}
 
-	
 }
 
 
@@ -152,16 +207,21 @@ void PhysicsUpdate(float dt) {
 
 		forceVectors[i] = calculateAllForces(nodeVectors, velVectors, i);
 		
-		newVectors[i] = nodeVectors[i] + dt * velVectors[i]; //Euler
+		lastVectors[i] = newVectors[i];
 
-		velVectors[i].x = velVectors[i].x + dt * 0;
-		velVectors[i].y = velVectors[i].y + dt * -9.81;
+		newVectors[i] = nodeVectors[i] + dt * velVectors[i]; //Euler 
+
+		velVectors[i].x = velVectors[i].x + dt * 0; //Velocities
+		velVectors[i].y = velVectors[i].y + dt * 0;
 		velVectors[i].z = velVectors[i].z + dt * 0;
 
 		//std::cout << "Velocity: " << i << " " << velVectors[i].x << " " << velVectors[i].y << " " << velVectors[i].z << std::endl;
 		//std::cout << "Position: " << i << " " << newVectors[i].x << " " << newVectors[i].y << " " << newVectors[i].z << std::endl;
 
 		nodeVectors[i] = newVectors[i]; //Update position
+
+		velVectors[i] = calculateAllCollisions(nodeVectors, velVectors, lastVectors[i], 1, i); //Return velocity vector collision
+		nodeVectors[i] = calculateAllCollisions(nodeVectors, velVectors, lastVectors[i], 2, i); //Return position vector on collision
 
 	}
 
