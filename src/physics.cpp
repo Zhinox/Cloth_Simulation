@@ -22,8 +22,8 @@ const int meshRows = 18;
 const int meshColumns = 14;
 const int totalVertex = meshRows * meshColumns;
 
-static int Ke = 1000;
-static float Kd = 50;
+static int Ke = 100; //Stiffness
+static float Kd = 0.5; //Damping
 static float L = 0.5f;
 static float maxElongation = 7.f;
 static int resetTime = 10;
@@ -45,11 +45,11 @@ glm::vec3 frontN = { 0,0,-1 };
 void GUI() {
 	
 		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-		ImGui::SliderInt("Reset Time", &resetTime, 1, 20);
+		ImGui::SliderInt("Reset Time", &resetTime, 0, 20);
 		ImGui::SliderInt("Ke", &Ke, 100, 2000);
 		ImGui::SliderFloat("Kd", &Kd, 1, 100);
 		ImGui::SliderFloat("Max elongation", &maxElongation, 1, 10);
-		ImGui::SliderFloat("Inital rest distance", &L, 0.1f, 0.8f);
+		ImGui::SliderFloat("Inital rest distance", &L, 0.1f, 0.75f);
 
 		if(show_test_window) {
 			ImGui::SetNextWindowPos(ImVec2(650, 20), ImGuiSetCond_FirstUseEver);
@@ -101,7 +101,6 @@ glm::vec3 calculateAllCollisions(glm::vec3 vectorPos[], glm::vec3 vectorsVel[], 
 				if (mode == 1) { return vectorPos[calcVector]; }
 				else { return vectorsVel[calcVector]; }
 			}
-
 }
 
 
@@ -136,32 +135,32 @@ glm::vec3 calculateAllForces(glm::vec3 vectorsPos[], glm::vec3 vectorsVel[], int
 	glm::vec3 totalForces;
 
 	//Structural
-	if (calcVector % 18 != 17) { totalForces += calculateForces(vectorsPos[calcVector], vectorsPos[calcVector + 1], vectorsVel[calcVector], vectorsVel[calcVector + 1], L); } //Dreta 
+	if (calcVector % 14 != 13) { totalForces += calculateForces(vectorsPos[calcVector], vectorsPos[calcVector + 1], vectorsVel[calcVector], vectorsVel[calcVector + 1], L); } //Dreta 
 
-	if (calcVector % 18 != 0) { totalForces += calculateForces(vectorsPos[calcVector], vectorsPos[calcVector - 1], vectorsVel[calcVector], vectorsVel[calcVector - 1], L); }//Esquerra
+	if (calcVector % 14 != 0) { totalForces += calculateForces(vectorsPos[calcVector], vectorsPos[calcVector - 1], vectorsVel[calcVector], vectorsVel[calcVector - 1], L); }//Esquerra
 
-	if (calcVector / 18 != 0) { totalForces += calculateForces(vectorsPos[calcVector], vectorsPos[calcVector - 18], vectorsVel[calcVector], vectorsVel[calcVector - 18],L); } //Adalt
+	if (calcVector / 14 != 0) { totalForces += calculateForces(vectorsPos[calcVector], vectorsPos[calcVector - 14], vectorsVel[calcVector], vectorsVel[calcVector - 14],L); } //Adalt
 
-	if (calcVector / 18 != 13) { totalForces += calculateForces(vectorsPos[calcVector], vectorsPos[calcVector + 18], vectorsVel[calcVector], vectorsVel[calcVector + 18],L); } //Abaix
-
+	if (calcVector / 14 != 17) { totalForces += calculateForces(vectorsPos[calcVector], vectorsPos[calcVector + 14], vectorsVel[calcVector], vectorsVel[calcVector + 14],L); } //Abaix
+	
 	//Shear
-	if (calcVector % 18 != 17 && calcVector / 18 != 0) { totalForces += calculateForces(vectorsPos[calcVector], vectorsPos[calcVector - 17], vectorsVel[calcVector], vectorsVel[calcVector - 17], sqrt(L*L+L*L)); }//Diagonal dreta adalt
-
-	if (calcVector % 18 != 17 && calcVector / 18 != 13) { totalForces += calculateForces(vectorsPos[calcVector], vectorsPos[calcVector + 19], vectorsVel[calcVector], vectorsVel[calcVector + 19], sqrt(L*L + L*L)); }//Diagonal dreta abaix
-
-	if (calcVector % 18 != 0 && calcVector / 18 != 0) { totalForces += calculateForces(vectorsPos[calcVector], vectorsPos[calcVector + 17], vectorsVel[calcVector], vectorsVel[calcVector + 17], sqrt(L*L + L*L)); }//Diagonal esquerra adalt
-
-	if (calcVector % 18 != 0 && calcVector / 18 != 13) { totalForces += calculateForces(vectorsPos[calcVector], vectorsPos[calcVector - 19], vectorsVel[calcVector], vectorsVel[calcVector - 19], sqrt(L*L + L*L)); } //Diagonal esquerra abaix
-
+	if (calcVector % 14 != 13 && calcVector / 14 != 0) { totalForces += calculateForces(vectorsPos[calcVector], vectorsPos[calcVector - 13], vectorsVel[calcVector], vectorsVel[calcVector - 13], sqrt(L*L+L*L)); }//Diagonal dreta adalt
+	
+	if (calcVector % 14 != 13 && calcVector / 14 != 17) { totalForces += calculateForces(vectorsPos[calcVector], vectorsPos[calcVector + 15], vectorsVel[calcVector], vectorsVel[calcVector + 15], sqrt(L*L + L*L)); }//Diagonal dreta abaix
+	
+	if (calcVector % 14 != 0 && calcVector / 14 != 0) { totalForces += calculateForces(vectorsPos[calcVector], vectorsPos[calcVector - 15], vectorsVel[calcVector], vectorsVel[calcVector - 15], sqrt(L*L + L*L)); }//Diagonal esquerra adalt
+	
+	if (calcVector % 14 != 0 && calcVector / 14 != 17) { totalForces += calculateForces(vectorsPos[calcVector], vectorsPos[calcVector + 13], vectorsVel[calcVector], vectorsVel[calcVector + 13], sqrt(L*L + L*L)); } //Diagonal esquerra abaix
+	
 	//Bending
-	if (calcVector % 18 != 17 && calcVector % 18 != 16) { totalForces += calculateForces(vectorsPos[calcVector], vectorsPos[calcVector + 2], vectorsVel[calcVector], vectorsVel[calcVector + 2], L*2); } //Doble dreta
-
-	if (calcVector % 18 != 0 && calcVector % 18 != 1) { totalForces += calculateForces(vectorsPos[calcVector], vectorsPos[calcVector - 2], vectorsVel[calcVector], vectorsVel[calcVector - 2], L*2); } //Doble esquerra
-
-	if (calcVector / 18 != 0 && calcVector / 18 != 1) { totalForces += calculateForces(vectorsPos[calcVector], vectorsPos[calcVector - 36], vectorsVel[calcVector], vectorsVel[calcVector - 36], L*2); } //Doble adalt
-
-	if (calcVector / 18 != 13 && calcVector / 18 != 12) { totalForces += calculateForces(vectorsPos[calcVector], vectorsPos[calcVector + 36], vectorsVel[calcVector], vectorsVel[calcVector + 36], L*2); } //Doble abaix
-
+	if (calcVector % 14 != 13 && calcVector % 14 != 12) { totalForces += calculateForces(vectorsPos[calcVector], vectorsPos[calcVector + 2], vectorsVel[calcVector], vectorsVel[calcVector + 2], L*2); } //Doble dreta
+	
+	if (calcVector % 14 != 0 && calcVector % 14 != 1) { totalForces += calculateForces(vectorsPos[calcVector], vectorsPos[calcVector - 2], vectorsVel[calcVector], vectorsVel[calcVector - 2], L*2); } //Doble esquerra
+	
+	if (calcVector / 14 != 0 && calcVector / 14 != 1) { totalForces += calculateForces(vectorsPos[calcVector], vectorsPos[calcVector - 28], vectorsVel[calcVector], vectorsVel[calcVector - 28], L*2); } //Doble adalt
+	
+	if (calcVector / 14 != 17 && calcVector / 14 != 16) { totalForces += calculateForces(vectorsPos[calcVector], vectorsPos[calcVector + 28], vectorsVel[calcVector], vectorsVel[calcVector + 28], L*2); } //Doble abaix
+	
 	return totalForces;
 
 }
@@ -180,8 +179,7 @@ void PhysicsInit() {
 		nodeVectors[i] = { L * columnsCounter - (L*meshColumns/2) + L/2,8, L * rowsCounter - (L*meshRows/2) + L/2};
 		velVectors[i] = {0,0,0};
 		newVectors[i] = nodeVectors[i];
-		forceVectors[i] = calculateAllForces(nodeVectors, velVectors, i);
-		
+		forceVectors[i] = { 0,0,0 };
 		if (columnsCounter >= 13) {
 			columnsCounter = 0;
 			rowsCounter += 1;
@@ -194,6 +192,7 @@ void PhysicsInit() {
 
 void PhysicsUpdate(float dt) {
 	
+
 	//Top left always the same positions
 	nodeVectors[0] = { L * 0 - (L*meshColumns / 2) + L / 2,8, L * 0 - (L*meshRows / 2) + L / 2 };
 
@@ -202,27 +201,32 @@ void PhysicsUpdate(float dt) {
 
 	for (int i = 0; i < totalVertex; i++) { //Applying physics on all nodes
 		
+		if (i == 0 || i == 13) { forceVectors[i] = { 0,0,0 }; }
+		else {
+			forceVectors[i] = calculateAllForces(nodeVectors, velVectors, i);
 
-		forceVectors[i] = calculateAllForces(nodeVectors, velVectors, i);
+			lastVectors[i] = newVectors[i];
+
+
+			velVectors[i].x = velVectors[i].x + dt * forceVectors[i].x; //Velocities
+			velVectors[i].y = velVectors[i].y + dt * (-9.81f + forceVectors[i].y);
+			velVectors[i].z = velVectors[i].z + dt * forceVectors[i].z;
+
+			//std::cout << "Velocity: " << i << " " << velVectors[i].x << " " << velVectors[i].y << " " << velVectors[i].z << std::endl;
+			//std::cout << "Position: " << i << " " << newVectors[i].x << " " << newVectors[i].y << " " << newVectors[i].z << std::endl;
+
+			forceVectors[i] = glm::vec3(0, 0, 0);
+		}
 		
-		lastVectors[i] = newVectors[i];
+	}
+	for (int i = 0; i < totalVertex; i++) {
 
 		newVectors[i] = nodeVectors[i] + dt * velVectors[i]; //Euler 
 
-		velVectors[i].x = velVectors[i].x + dt * 0.2f; //Velocities
-		velVectors[i].y = velVectors[i].y + dt * -9.81f;
-		velVectors[i].z = velVectors[i].z + dt * 0.3f;
-
-		//std::cout << "Velocity: " << i << " " << velVectors[i].x << " " << velVectors[i].y << " " << velVectors[i].z << std::endl;
-		//std::cout << "Position: " << i << " " << newVectors[i].x << " " << newVectors[i].y << " " << newVectors[i].z << std::endl;
-
 		nodeVectors[i] = newVectors[i]; //Update position
 
-		velVectors[i] = calculateAllCollisions(nodeVectors, velVectors, lastVectors[i], 2, i); //Return velocity vector collision
-		nodeVectors[i] = calculateAllCollisions(nodeVectors, velVectors, lastVectors[i], 1, i); //Return position vector on collision
-
-
-
+		//velVectors[i] = calculateAllCollisions(nodeVectors, velVectors, lastVectors[i], 2, i); //Return velocity vector collision
+		//nodeVectors[i] = calculateAllCollisions(nodeVectors, velVectors, lastVectors[i], 1, i); //Return position vector on collision
 	}
 
 	dtCounter += dt;
