@@ -24,11 +24,12 @@ const int totalVertex = meshRows * meshColumns;
 
 static int Ke = 100; //Stiffness
 static float Kd = 0.5; //Damping
-static float L = 0.5f;
+static float L = 0.3f;
 static float elasticity = 0.8f;
-static int maxElongation = 20;
+static int maxElongation = 50;
 static int resetTime = 10;
 static float dtCounter = 0;
+static float height = 9.9f;
 
 static int lastKe, lastElongation;
 static float lastKd, lastL,lastTime;
@@ -64,6 +65,7 @@ void GUI() {
 	ImGui::SliderInt("Max elongation (%)", &maxElongation, 1, 300);
 	ImGui::SliderFloat("Inital rest distance", &L, 0.1f, 0.75f);
 	ImGui::SliderFloat("Elasticity", &elasticity, 0.1f, 0.9f);
+	ImGui::SliderFloat("Mesh height", &height, 0.1f, 9.9f);
 
 	if (show_test_window) {
 		ImGui::SetNextWindowPos(ImVec2(650, 20), ImGuiSetCond_FirstUseEver);
@@ -171,7 +173,7 @@ void reset() {
 	int rowsCounter = 0;
 
 	for (int i = 0; i < totalVertex; i++) {
-		nodeVectors[i] = { L * columnsCounter - (L*meshColumns / 2) + L / 2,8, L * rowsCounter - (L*meshRows / 2) + L / 2 };
+		nodeVectors[i] = { L * columnsCounter - (L*meshColumns / 2) + L / 2,height, L * rowsCounter - (L*meshRows / 2) + L / 2 };
 		velVectors[i] = { 0,0,0 };
 		newVectors[i] = nodeVectors[i];
 		forceVectors[i] = { 0,0,0 };
@@ -251,7 +253,7 @@ void PhysicsInit() {
 
 	//For that creates the Mesh with an "L" separation
 	for (int i = 0; i < totalVertex; i++) {
-		nodeVectors[i] = { L * columnsCounter - (L*meshColumns / 2) + L / 2,8, L * rowsCounter - (L*meshRows / 2) + L / 2 };
+		nodeVectors[i] = { L * columnsCounter - (L*meshColumns / 2) + L / 2,height, L * rowsCounter - (L*meshRows / 2) + L / 2 };
 		velVectors[i] = { 0,0,0 };
 		newVectors[i] = nodeVectors[i];
 		forceVectors[i] = { 0,0,0 };
@@ -267,10 +269,10 @@ void PhysicsInit() {
 void PhysicsUpdate(float dt) {
 
 	//Top left always the same positions
-	nodeVectors[0] = { L * 0 - (L*meshColumns / 2) + L / 2,8, L * 0 - (L*meshRows / 2) + L / 2 };
+	nodeVectors[0] = { L * 0 - (L*meshColumns / 2) + L / 2,height, L * 0 - (L*meshRows / 2) + L / 2 };
 
 	//Top right always the same positions
-	nodeVectors[13] = { L * 13 - (L*meshColumns / 2) + L / 2,8, L * 0 - (L*meshRows / 2) + L / 2 };
+	nodeVectors[13] = { L * 13 - (L*meshColumns / 2) + L / 2,height, L * 0 - (L*meshRows / 2) + L / 2 };
 
 	for (int i = 0; i < totalVertex; i++) { //Applying forces and velocities on all nodes
 
