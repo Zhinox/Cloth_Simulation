@@ -25,12 +25,13 @@ const int totalVertex = meshRows * meshColumns;
 static int Ke = 100; //Stiffness
 static float Kd = 0.5; //Damping
 static float L = 0.5f;
-static float maxElongation = 7.f;
+static float elasticity = 0.8f;
+static int maxElongation = 7;
 static int resetTime = 10;
 static float dtCounter = 0;
 
-static int lastKe;
-static float lastKd, lastL, lastElongation, lastTime;
+static int lastKe, lastElongation;
+static float lastKd, lastL,lastTime;
 
 //Mesh arrays
 glm::vec3 *nodeVectors;
@@ -53,8 +54,9 @@ void GUI() {
 	ImGui::SliderInt("Reset Time", &resetTime, 0, 20);
 	ImGui::SliderInt("Ke", &Ke, 100, 2000);
 	ImGui::SliderFloat("Kd", &Kd, 1, 100);
-	ImGui::SliderFloat("Max elongation", &maxElongation, 1, 10);
+	ImGui::SliderInt("Max elongation (%)", &maxElongation, 1, 100);
 	ImGui::SliderFloat("Inital rest distance", &L, 0.1f, 0.75f);
+	ImGui::SliderFloat("Elasticity", &elasticity, 0.1f, 0.9f);
 
 	if (show_test_window) {
 		ImGui::SetNextWindowPos(ImVec2(650, 20), ImGuiSetCond_FirstUseEver);
@@ -70,41 +72,41 @@ float calculateCollision(glm::vec3 vector, glm::vec3 lastvector, glm::vec3 norma
 
 }
 
-glm::vec3 calculateAllCollisions(glm::vec3 vectorPos[], glm::vec3 vectorsVel[], glm::vec3 lastPosition, int mode, int calcVector) {
+glm::vec3 calculateAllCollisions(glm::vec3 vectorPos, glm::vec3 vectorsVel, glm::vec3 lastPosition, int mode) {
 
-	if (calculateCollision(vectorPos[calcVector], lastPosition, terraN, 0) <= 0) { //Collision with ground
-		if (mode == 1) { return vectorPos[calcVector] - (1 + 0.9f) * (glm::dot(terraN, vectorPos[calcVector]) + 0) * terraN; }
-		else { return vectorsVel[calcVector] - (1 + 0.9f) * (glm::dot(terraN, vectorsVel[calcVector]) + 0) * terraN; }
+	if (calculateCollision(vectorPos, lastPosition, terraN, 0) <= 0) { //Collision with ground
+		if (mode == 1) { return vectorPos - (1 + elasticity) * (glm::dot(terraN, vectorPos) + 0) * terraN; }
+		else { return vectorsVel - (1 + elasticity) * (glm::dot(terraN, vectorsVel) + 0) * terraN; }
 	}
 
-	if (calculateCollision(vectorPos[calcVector], lastPosition, sostreN, 10) <= 0) { //Collision with roof
-		if (mode == 1) { return vectorPos[calcVector] - (1 + 0.9f) * (glm::dot(sostreN, vectorPos[calcVector]) + 10) * sostreN; }
-		else { return vectorsVel[calcVector] - (1 + 0.9f) * (glm::dot(sostreN, vectorsVel[calcVector]) + 10) * sostreN; }
+	if (calculateCollision(vectorPos, lastPosition, sostreN, 10) <= 0) { //Collision with roof
+		if (mode == 1) { return vectorPos - (1 + elasticity) * (glm::dot(sostreN, vectorPos) + 10) * sostreN; }
+		else { return vectorsVel - (1 + elasticity) * (glm::dot(sostreN, vectorsVel) + 10) * sostreN; }
 	}
 
-	if (calculateCollision(vectorPos[calcVector], lastPosition, leftN, 5) <= 0) { //Collision with left wall
-		if (mode == 1) { return vectorPos[calcVector] - (1 + 0.9f) * (glm::dot(leftN, vectorPos[calcVector]) + 5) * leftN; }
-		else { return vectorsVel[calcVector] - (1 + 0.9f) * (glm::dot(leftN, vectorsVel[calcVector]) + 5) * leftN; }
+	if (calculateCollision(vectorPos, lastPosition, leftN, 5) <= 0) { //Collision with left wall
+		if (mode == 1) { return vectorPos - (1 + elasticity) * (glm::dot(leftN, vectorPos) + 5) * leftN; }
+		else { return vectorsVel - (1 + elasticity) * (glm::dot(leftN, vectorsVel) + 5) * leftN; }
 	}
 
-	if (calculateCollision(vectorPos[calcVector], lastPosition, rightN, 5) <= 0) { //Collision with right wall
-		if (mode == 1) { return vectorPos[calcVector] - (1 + 0.9f) * (glm::dot(rightN, vectorPos[calcVector]) + 5) * rightN; }
-		else { return vectorsVel[calcVector] - (1 + 0.9f) * (glm::dot(rightN, vectorsVel[calcVector]) + 5) * rightN; }
+	if (calculateCollision(vectorPos, lastPosition, rightN, 5) <= 0) { //Collision with right wall
+		if (mode == 1) { return vectorPos - (1 + elasticity) * (glm::dot(rightN, vectorPos) + 5) * rightN; }
+		else { return vectorsVel - (1 + elasticity) * (glm::dot(rightN, vectorsVel) + 5) * rightN; }
 	}
 
-	if (calculateCollision(vectorPos[calcVector], lastPosition, frontN, 5) <= 0) { //Collision with front wall
-		if (mode == 1) { return vectorPos[calcVector] - (1 + 0.9f) * (glm::dot(frontN, vectorPos[calcVector]) + 5) * frontN; }
-		else { return vectorsVel[calcVector] - (1 + 0.9f) * (glm::dot(frontN, vectorsVel[calcVector]) + 5) * frontN; }
+	if (calculateCollision(vectorPos, lastPosition, frontN, 5) <= 0) { //Collision with front wall
+		if (mode == 1) { return vectorPos - (1 + elasticity) * (glm::dot(frontN, vectorPos) + 5) * frontN; }
+		else { return vectorsVel - (1 + elasticity) * (glm::dot(frontN, vectorsVel) + 5) * frontN; }
 	}
 
-	if (calculateCollision(vectorPos[calcVector], lastPosition, backN, 5) <= 0) { //Collision with back wall
-		if (mode == 1) { return vectorPos[calcVector] - (1 + 0.9f) * (glm::dot(backN, vectorPos[calcVector]) + 5) * backN; }
-		else { return vectorsVel[calcVector] - (1 + 0.9f) * (glm::dot(backN, vectorsVel[calcVector]) + 5) * backN; }
+	if (calculateCollision(vectorPos, lastPosition, backN, 5) <= 0) { //Collision with back wall
+		if (mode == 1) { return vectorPos - (1 + elasticity) * (glm::dot(backN, vectorPos) + 5) * backN; }
+		else { return vectorsVel - (1 + elasticity) * (glm::dot(backN, vectorsVel) + 5) * backN; }
 	}
 
 	else {
-		if (mode == 1) { return vectorPos[calcVector]; } //If no collision is detected, return the same vector
-		else { return vectorsVel[calcVector]; }
+		if (mode == 1) { return vectorPos; } //If no collision is detected, return the same vector
+		else { return vectorsVel; }
 	}
 }
 
@@ -138,7 +140,7 @@ glm::vec3 calculateAllForces(glm::vec3 vectorsPos[], glm::vec3 vectorsVel[], int
 
 	if (calcVector / 14 != 17) { totalForces += calculateForces(vectorsPos[calcVector], vectorsPos[calcVector + 14], vectorsVel[calcVector], vectorsVel[calcVector + 14], L); } //Abaix
 
-																																												//Shear
+	//Shear
 	if (calcVector % 14 != 13 && calcVector / 14 != 0) { totalForces += calculateForces(vectorsPos[calcVector], vectorsPos[calcVector - 13], vectorsVel[calcVector], vectorsVel[calcVector - 13], sqrt(L*L + L*L)); } //Diagonal dreta adalt
 
 	if (calcVector % 14 != 13 && calcVector / 14 != 17) { totalForces += calculateForces(vectorsPos[calcVector], vectorsPos[calcVector + 15], vectorsVel[calcVector], vectorsVel[calcVector + 15], sqrt(L*L + L*L)); } //Diagonal dreta abaix
@@ -147,7 +149,7 @@ glm::vec3 calculateAllForces(glm::vec3 vectorsPos[], glm::vec3 vectorsVel[], int
 
 	if (calcVector % 14 != 0 && calcVector / 14 != 17) { totalForces += calculateForces(vectorsPos[calcVector], vectorsPos[calcVector + 13], vectorsVel[calcVector], vectorsVel[calcVector + 13], sqrt(L*L + L*L)); } //Diagonal esquerra abaix
 
-																																																					  //Bending
+	//Bending
 	if (calcVector % 14 != 13 && calcVector % 14 != 12) { totalForces += calculateForces(vectorsPos[calcVector], vectorsPos[calcVector + 2], vectorsVel[calcVector], vectorsVel[calcVector + 2], L * 2); } //Doble dreta
 
 	if (calcVector % 14 != 0 && calcVector % 14 != 1) { totalForces += calculateForces(vectorsPos[calcVector], vectorsPos[calcVector - 2], vectorsVel[calcVector], vectorsVel[calcVector - 2], L * 2); } //Doble esquerra
@@ -259,6 +261,9 @@ void PhysicsUpdate(float dt) {
 		newVectors[i] = nodeVectors[i] + dt * velVectors[i]; //Euler 
 
 		nodeVectors[i] = newVectors[i]; //Update position
+
+		//velVectors[i] = calculateAllCollisions(nodeVectors[i], velVectors[i], lastVectors[i], 1);
+		//nodeVectors[i] = calculateAllCollisions(nodeVectors[i], velVectors[i], lastVectors[i], 1);
 	}
 
 	dtCounter += dt;
