@@ -204,8 +204,8 @@ void checkElongation(glm::vec3 posVectors[]) {
 		
 		if (i % 14 != 13) { //Check if there's a node on the right
 
-			distanceRight = glm::length(posVectors[i] - posVectors[i + 1]);
-			unitariRight = glm::normalize(posVectors[i] - posVectors[i + 1]);
+			distanceRight = glm::length(posVectors[i] - posVectors[i + 1]); //Calculate distance with vectors
+			unitariRight = glm::normalize(posVectors[i] - posVectors[i + 1]); //Calculate normal vector
 
 			if (distanceRight > maxL) { //Check if the distance is higher than the max
 				difference = maxL - distanceRight;
@@ -261,7 +261,6 @@ void PhysicsInit() {
 		}
 		else { columnsCounter += 1; }
 	}
-
 }
 
 
@@ -299,19 +298,16 @@ void PhysicsUpdate(float dt) {
 
 		nodeVectors[i] = newVectors[i]; //Update position
 
-		checkElongation(nodeVectors);
+		checkElongation(nodeVectors); //Check max elongation
 
-		calculateAllCollisions(nodeVectors[i], velVectors[i], lastVectors[i]);
-
-		
+		calculateAllCollisions(nodeVectors[i], velVectors[i], lastVectors[i]); //Calculate particle collision
 		
 		}
-		
 	}
 
 	dtCounter += dt;
 
-	checkChanges();
+	checkChanges(); //Check if variables have changed, to reset
 
 	if (dtCounter >= resetTime) { reset(); dtCounter = 0; } //Reset every "x" seconds
 
