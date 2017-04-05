@@ -26,12 +26,19 @@ static int Ke = 100; //Stiffness
 static float Kd = 0.5; //Damping
 static float L = 0.5f;
 static float elasticity = 0.8f;
-static int maxElongation = 7;
+static int maxElongation = 20;
 static int resetTime = 10;
 static float dtCounter = 0;
 
 static int lastKe, lastElongation;
 static float lastKd, lastL,lastTime;
+
+float distanceRight = 0;
+float distanceDown = 0;
+glm::vec3 unitariRight;
+glm::vec3 unitariDown;
+float difference = 0;
+float maxL = L + (L * maxElongation) / 100;
 
 //Mesh arrays
 glm::vec3 *nodeVectors;
@@ -53,8 +60,8 @@ void GUI() {
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 	ImGui::SliderInt("Reset Time", &resetTime, 0, 20);
 	ImGui::SliderInt("Ke", &Ke, 100, 2000);
-	ImGui::SliderFloat("Kd", &Kd, 1, 100);
-	ImGui::SliderInt("Max elongation (%)", &maxElongation, 1, 100);
+	ImGui::SliderFloat("Kd", &Kd, 0.1f, 100);
+	ImGui::SliderInt("Max elongation (%)", &maxElongation, 1, 300);
 	ImGui::SliderFloat("Inital rest distance", &L, 0.1f, 0.75f);
 	ImGui::SliderFloat("Elasticity", &elasticity, 0.1f, 0.9f);
 
@@ -191,31 +198,32 @@ void checkChanges() {
 
 void checkElongation(glm::vec3 posVectors[]) {
 
-	float distanceRight = 0;
-	float distanceDown = 0;
-	glm::vec3 unitariRight;
-	glm::vec3 unitariDown;
-
-	float maxL = (L * maxElongation) / 100;
+	maxL = L + (L * maxElongation) / 100; //Calculate the max elongation with %
 
 	for (int i = 0; i < totalVertex; i++) {
 		
-		if (i % 14 != 13 && i / 14 != 17) {
+		if (i % 14 != 13) { //Check if there's a node on the right
 
 			distanceRight = glm::length(posVectors[i] - posVectors[i + 1]);
-			distanceDown = glm::length(posVectors[i] - posVectors[i + 14]);
 			unitariRight = glm::normalize(posVectors[i] - posVectors[i + 1]);
+
+			if (distanceRight > maxL) { //Check if the distance is higher than the max
+				difference = maxL - distanceRight;
+				if (i != 0) { posVectors[i] += (difference / 2) * unitariRight; }
+				if (i != 12) { posVectors[i + 1] -= (difference / 2) * unitariRight; }
+			}
+		}
+
+		if (i / 14 != 17) { //Check if there's a node down
+			
+			distanceDown = glm::length(posVectors[i] - posVectors[i + 14]);
 			unitariDown = glm::normalize(posVectors[i] - posVectors[i + 14]);
 
-			if (distanceRight > maxL) {
-				posVectors[i] += (maxL / 2) * unitariRight;
-				posVectors[i + 1] -= (maxL / 2) * unitariRight;
-
-			}
-
-			if (distanceDown > maxL) {
-				posVectors[i] += (maxL / 2) * unitariDown;
-				posVectors[i + 14] -= (maxL / 2) * unitariDown;
+			if (distanceDown > maxL) { //Check if the distance is higher than the max
+				difference = maxL - distanceDown;
+				if (i == 0 || i == 13) {}
+				else { posVectors[i] += (difference / 2) * unitariDown; }
+				posVectors[i + 14] -= (difference / 2) * unitariDown;
 			}
 		}
 	}
@@ -269,7 +277,6 @@ void PhysicsUpdate(float dt) {
 
 		if (i == 0 || i == 13) { forceVectors[i] = { 0,0,0 }; }
 		else {
-
 			forceVectors[i] = calculateAllForces(nodeVectors, velVectors, i); //Calculate forces and store them on array
 		}
 	}
@@ -292,9 +299,11 @@ void PhysicsUpdate(float dt) {
 
 		nodeVectors[i] = newVectors[i]; //Update position
 
+		checkElongation(nodeVectors);
+
 		calculateAllCollisions(nodeVectors[i], velVectors[i], lastVectors[i]);
 
-		checkElongation(nodeVectors);
+		
 		
 		}
 		
