@@ -41,8 +41,8 @@ glm::vec3 *newVectors;
 glm::vec3 *forceVectors;
 
 //Cube planes
-glm::vec3 terraN = { 0,1,0 };
-glm::vec3 sostreN = { 0,-1,0 };
+glm::vec3 groundN = { 0,1,0 };
+glm::vec3 roofN = { 0,-1,0 };
 glm::vec3 leftN = { 1,0,0 };
 glm::vec3 rightN = { -1,0,0 };
 glm::vec3 backN = { 0,0,1 };
@@ -72,48 +72,43 @@ float calculateCollision(glm::vec3 vector, glm::vec3 lastvector, glm::vec3 norma
 
 }
 
-glm::vec3 calculateAllCollisions(glm::vec3 vectorPos, glm::vec3 vectorsVel, glm::vec3 lastPosition, int mode) {
+void calculateAllCollisions(glm::vec3 &vectorPos, glm::vec3 &vectorsVel, glm::vec3 &lastPosition) {
 
-	if (calculateCollision(vectorPos, lastPosition, terraN, 0) <= 0) { //Collision with ground
-		if (mode == 1) { return vectorPos - (1 + elasticity) * (glm::dot(terraN, vectorPos) + 0) * terraN; }
-		else { return vectorsVel - (1 + elasticity) * (glm::dot(terraN, vectorsVel) + 0) * terraN; }
+	if (calculateCollision(vectorPos, lastPosition, groundN, 0) < 0) { //Collision with ground
+		vectorPos = vectorPos - (1 + elasticity) * (glm::dot(groundN, vectorPos) + 0) * groundN; 
+		vectorsVel = vectorsVel - (1 + elasticity) * (glm::dot(groundN, vectorsVel) + 0) * groundN;
 	}
 
-	if (calculateCollision(vectorPos, lastPosition, sostreN, 10) <= 0) { //Collision with roof
-		if (mode == 1) { return vectorPos - (1 + elasticity) * (glm::dot(sostreN, vectorPos) + 10) * sostreN; }
-		else { return vectorsVel - (1 + elasticity) * (glm::dot(sostreN, vectorsVel) + 10) * sostreN; }
+	if (calculateCollision(vectorPos, lastPosition, roofN, 10) <= 0) { //Collision with roof
+		vectorPos = vectorPos - (1 + elasticity) * (glm::dot(roofN, vectorPos) + 10) * roofN; 
+		vectorsVel = vectorsVel - (1 + elasticity) * (glm::dot(roofN, vectorsVel) + 0) * roofN; 
 	}
 
 	if (calculateCollision(vectorPos, lastPosition, leftN, 5) <= 0) { //Collision with left wall
-		if (mode == 1) { return vectorPos - (1 + elasticity) * (glm::dot(leftN, vectorPos) + 5) * leftN; }
-		else { return vectorsVel - (1 + elasticity) * (glm::dot(leftN, vectorsVel) + 5) * leftN; }
+		vectorPos = vectorPos - (1 + elasticity) * (glm::dot(leftN, vectorPos) + 5) * leftN; 
+		vectorsVel = vectorsVel - (1 + elasticity) * (glm::dot(leftN, vectorsVel) + 0) * leftN; 
 	}
 
 	if (calculateCollision(vectorPos, lastPosition, rightN, 5) <= 0) { //Collision with right wall
-		if (mode == 1) { return vectorPos - (1 + elasticity) * (glm::dot(rightN, vectorPos) + 5) * rightN; }
-		else { return vectorsVel - (1 + elasticity) * (glm::dot(rightN, vectorsVel) + 5) * rightN; }
+		vectorPos = vectorPos - (1 + elasticity) * (glm::dot(rightN, vectorPos) + 5) * rightN; 
+		vectorsVel = vectorsVel - (1 + elasticity) * (glm::dot(rightN, vectorsVel) + 0) * rightN; 
 	}
 
 	if (calculateCollision(vectorPos, lastPosition, frontN, 5) <= 0) { //Collision with front wall
-		if (mode == 1) { return vectorPos - (1 + elasticity) * (glm::dot(frontN, vectorPos) + 5) * frontN; }
-		else { return vectorsVel - (1 + elasticity) * (glm::dot(frontN, vectorsVel) + 5) * frontN; }
+		vectorPos = vectorPos - (1 + elasticity) * (glm::dot(frontN, vectorPos) + 5) * frontN; 
+		vectorsVel = vectorsVel - (1 + elasticity) * (glm::dot(frontN, vectorsVel) + 0) * frontN; 
 	}
 
 	if (calculateCollision(vectorPos, lastPosition, backN, 5) <= 0) { //Collision with back wall
-		if (mode == 1) { return vectorPos - (1 + elasticity) * (glm::dot(backN, vectorPos) + 5) * backN; }
-		else { return vectorsVel - (1 + elasticity) * (glm::dot(backN, vectorsVel) + 5) * backN; }
-	}
-
-	else {
-		if (mode == 1) { return vectorPos; } //If no collision is detected, return the same vector
-		else { return vectorsVel; }
+		vectorPos = vectorPos - (1 + elasticity) * (glm::dot(backN, vectorPos) + 5) * backN; 
+		vectorsVel = vectorsVel - (1 + elasticity) * (glm::dot(backN, vectorsVel) + 0) * backN; 
 	}
 }
 
 
 glm::vec3 calculateForces(glm::vec3 P1, glm::vec3 P2, glm::vec3 v1, glm::vec3 v2, float Length) {
 
-	float distance = glm::length(P1 - P2); //Calculate distance between points
+	float distance = glm::length(P1 - P2); //Calculate distance between points 
 
 	glm::vec3 velocity = (v1 - v2); //Velocity vector
 
@@ -194,6 +189,38 @@ void checkChanges() {
 	}
 }
 
+void checkElongation(glm::vec3 posVectors[]) {
+
+	float distanceRight = 0;
+	float distanceDown = 0;
+	glm::vec3 unitariRight;
+	glm::vec3 unitariDown;
+
+	float maxL = (L * maxElongation) / 100;
+
+	for (int i = 0; i < totalVertex; i++) {
+		
+		if (i % 14 != 13 && i / 14 != 17) {
+
+			distanceRight = glm::length(posVectors[i] - posVectors[i + 1]);
+			distanceDown = glm::length(posVectors[i] - posVectors[i + 14]);
+			unitariRight = glm::normalize(posVectors[i] - posVectors[i + 1]);
+			unitariDown = glm::normalize(posVectors[i] - posVectors[i + 14]);
+
+			if (distanceRight > maxL) {
+				posVectors[i] += (maxL / 2) * unitariRight;
+				posVectors[i + 1] -= (maxL / 2) * unitariRight;
+
+			}
+
+			if (distanceDown > maxL) {
+				posVectors[i] += (maxL / 2) * unitariDown;
+				posVectors[i + 14] -= (maxL / 2) * unitariDown;
+			}
+		}
+	}
+}
+
 void PhysicsInit() {
 
 	//Creation of all glm::vec3 arrays
@@ -244,26 +271,33 @@ void PhysicsUpdate(float dt) {
 		else {
 
 			forceVectors[i] = calculateAllForces(nodeVectors, velVectors, i); //Calculate forces and store them on array
-
-			lastVectors[i] = newVectors[i]; //Store last position vector
-
-											//Velocities and gravity
-			velVectors[i].x = velVectors[i].x + dt * forceVectors[i].x;
-			velVectors[i].y = velVectors[i].y + dt * (-9.81f + forceVectors[i].y);
-			velVectors[i].z = velVectors[i].z + dt * forceVectors[i].z;
-
-			forceVectors[i] = glm::vec3(0, 0, 0); //Reset forces
 		}
 	}
 
 	for (int i = 0; i < totalVertex; i++) { //Applying Euler's solver and upating
 
+		if (i == 0 || i == 13) { forceVectors[i] = { 0,0,0 }; }
+		else {
+
+		lastVectors[i] = nodeVectors[i]; //Store last position vector
+
+		//Velocities and gravity
+		velVectors[i].x = velVectors[i].x + dt * forceVectors[i].x;
+		velVectors[i].y = velVectors[i].y + dt * (-9.81f + forceVectors[i].y);
+		velVectors[i].z = velVectors[i].z + dt * forceVectors[i].z;
+
+		forceVectors[i] = glm::vec3(0, 0, 0); //Reset forces
+		
 		newVectors[i] = nodeVectors[i] + dt * velVectors[i]; //Euler 
 
 		nodeVectors[i] = newVectors[i]; //Update position
 
-		//velVectors[i] = calculateAllCollisions(nodeVectors[i], velVectors[i], lastVectors[i], 1);
-		//nodeVectors[i] = calculateAllCollisions(nodeVectors[i], velVectors[i], lastVectors[i], 1);
+		calculateAllCollisions(nodeVectors[i], velVectors[i], lastVectors[i]);
+
+		checkElongation(nodeVectors);
+		
+		}
+		
 	}
 
 	dtCounter += dt;
